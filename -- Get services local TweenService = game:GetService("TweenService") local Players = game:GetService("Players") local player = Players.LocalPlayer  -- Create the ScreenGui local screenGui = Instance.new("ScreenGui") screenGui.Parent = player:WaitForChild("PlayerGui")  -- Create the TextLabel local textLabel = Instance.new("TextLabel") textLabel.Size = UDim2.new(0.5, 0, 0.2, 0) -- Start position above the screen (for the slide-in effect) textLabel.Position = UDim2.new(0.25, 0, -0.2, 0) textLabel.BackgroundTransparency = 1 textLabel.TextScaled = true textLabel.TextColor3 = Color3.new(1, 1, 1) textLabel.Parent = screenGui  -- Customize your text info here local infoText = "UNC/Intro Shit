@@ -1,0 +1,68 @@
+-- Get services
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Create the ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Create the TextLabel
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(0.5, 0, 0.2, 0)
+-- Start position above the screen (for the slide-in effect)
+textLabel.Position = UDim2.new(0.25, 0, -0.2, 0)
+textLabel.BackgroundTransparency = 1
+textLabel.TextScaled = true
+textLabel.TextColor3 = Color3.new(1, 1, 1)
+textLabel.Parent = screenGui
+
+-- Customize your text info here
+local infoText = "UNC/sUNC Tester Loaded, Press Z to test the sUNC, X for UNC, and C to save the results to your workspace folder."
+textLabel.Text = infoText
+-- Set initial text transparency (invisible)
+textLabel.TextTransparency = 1
+
+-- Tween settings: duration, easing style/direction, etc.
+local tweenInfo = TweenInfo.new(
+    2, -- Duration: 2 seconds
+    Enum.EasingStyle.Quad,
+    Enum.EasingDirection.Out,
+    0, -- No repeat
+    false, -- Do not reverse
+    0 -- No delay
+)
+
+-- Define the properties to tween:
+-- Moving to a central position and fading in the text
+local tweenProperties = {
+    Position = UDim2.new(0.25, 0, 0.4, 0),
+    TextTransparency = 0
+}
+
+-- Create and play the tween
+local tween = TweenService:Create(textLabel, tweenInfo, tweenProperties)
+tween:Play()
+-- Wait a few seconds before disappearing
+tween.Completed:Wait()
+task.wait(5) -- How long the text stays visible before disappearing
+
+-- Tween out settings (fade + move up again)
+local tweenOutInfo = TweenInfo.new(
+    1.5, -- Duration
+    Enum.EasingStyle.Quad,
+    Enum.EasingDirection.In
+)
+
+local tweenOutProperties = {
+    Position = UDim2.new(0.25, 0, -0.2, 0),
+    TextTransparency = 1
+}
+
+local tweenOut = TweenService:Create(textLabel, tweenOutInfo, tweenOutProperties)
+tweenOut:Play()
+
+-- Optionally remove GUI after it's out
+tweenOut.Completed:Connect(function()
+    screenGui:Destroy()
+end)
