@@ -1,3 +1,5 @@
+-- I do not own ANY of this. Credit to Voxlis.net.
+
 local previousMessages = {}
 local tester = "User"
 local currentTime = os.date("%Y-%m-%d %H:%M:%S")
