@@ -1,0 +1,28 @@
+-- Replace with your target game's PlaceId
+local correctGameId = 4483381587
+
+local StarterGui = game:GetService("StarterGui")
+
+if game.PlaceId == correctGameId then
+    -- Notification for being in the correct game
+    StarterGui:SetCore("SendNotification", {
+        Title = "Game Check",
+        Text = "You are in the correct game to use the tester.",
+        Duration = 5
+    })
+    
+    -- Optionally, send a second notification with a different message after a short delay
+    task.wait(3)  -- waits 6 seconds (after the first notification duration)
+    StarterGui:SetCore("SendNotification", {
+        Title = "Enjoy!",
+        Text = "Joining this game minimizes false reports in the results.",
+        Duration = 5
+    })
+else
+    -- Notification for being in the wrong game
+    StarterGui:SetCore("SendNotification", {
+        Title = "Game Check",
+        Text = "Join a literal baseplate for the script to work properly.",
+        Duration = 5
+    })
+end
