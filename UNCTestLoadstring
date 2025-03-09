@@ -1,4 +1,4 @@
--- Kept everything seperate. Everythin is Open-Source.
+--Kept everything seperate. Everything is Open-Source.
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Intro%20Shit"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/UNC%20and%20sUNC%20Tester"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Keyboard"))()
