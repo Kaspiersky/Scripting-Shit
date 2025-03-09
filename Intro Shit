@@ -18,7 +18,7 @@ textLabel.TextColor3 = Color3.new(1, 1, 1)
 textLabel.Parent = screenGui
 
 -- Customize your text info here
-local infoText = "UNC/sUNC Tester Loaded, Press Z to test the sUNC, X for UNC, and C to save the results to your workspace folder."
+local infoText = "UNC/sUNC Tester Loaded, Press Z to test the sUNC, X for UNC, and C to save the results to your workspace folder. Check console for results by typing /console into chat."
 textLabel.Text = infoText
 -- Set initial text transparency (invisible)
 textLabel.TextTransparency = 1
