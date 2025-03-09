@@ -1,9 +1,6 @@
 --Kept everything seperate. Everything is Open-Source.
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Intro%20Shit"))()
-then
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/UNC%20and%20sUNC%20Tester"))()
-then
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Keyboard"))()
-then
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Intro%20Shit"))() then
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/UNC%20and%20sUNC%20Tester"))() then
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Keyboard"))() then
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Kaspiersky/Scripting-Shit/refs/heads/UNC/sUNC-Test-Script/Game%20Checker"))()
 end
