@@ -1,0 +1,5 @@
+-- Kept everything seperate and open sourced.
+loadstring(game:HttpGet("https://github.com/Kaspiersky/Scripting-Shit/blob/UNC/sUNC-Test-Script/Game%20Checker"))()
+loadstring(game:HttpGet("https://github.com/Kaspiersky/Scripting-Shit/blob/UNC/sUNC-Test-Script/Intro%20Shit"))()
+loadstring(game:HttpGet("https://github.com/Kaspiersky/Scripting-Shit/blob/UNC/sUNC-Test-Script/Keyboard"))()
+loadstring(game:HttpGet("https://github.com/Kaspiersky/Scripting-Shit/blob/UNC/sUNC-Test-Script/UNC%20and%20sUNC%20Tester"))()
