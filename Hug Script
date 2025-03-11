@@ -1,0 +1,318 @@
+-- This script creates a hugging GUI that allows the player to smoothly follow and hug the nearest player
+-- It requires R6 character rig type to work properly
+-- Made this with AI as well. A big pain in the ass.
+
+if game.Players.LocalPlayer.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 then
+    -- Check if GUI already exists and remove it to prevent duplicates
+    if game:GetService("CoreGui"):FindFirstChild("HUGUI") then
+        game:GetService("CoreGui"):FindFirstChild("HUGUI"):Destroy()
+    end
+
+    -- Configuration variables - Adjust these to customize the behavior
+    local TELEPORT_DISTANCE = 1 -- Distance to maintain from target player (in studs)
+    local LERP_SPEED = -1 -- Speed of smooth movement (lower = less smooth but faster)
+    local teleportConnection = nil -- Store the connection to disconnect later
+    local tweenService = game:GetService("TweenService") -- Service for smooth animations
+
+    -- Create all GUI elements and store them in variables
+    HUGUI = Instance.new("ScreenGui") -- Main container for all GUI elements
+    HFrame = Instance.new("Frame") -- Frame that contains the main content
+    HTopBar = Instance.new("Frame") -- Top bar containing minimize and close buttons
+    CloseButton = Instance.new("TextButton") -- Button to close the GUI
+    HugButton = Instance.new("TextButton") -- Button to toggle hugging
+    HugLabel = Instance.new("TextLabel") -- Text label for instructions
+    UserInputService = game:GetService("UserInputService") -- Service for handling user input
+    MinTab = Instance.new("TextButton") -- Button to minimize the GUI
+
+    -- Setup main GUI container
+    HUGUI.Name = "HUGUI" -- Set the name for easier reference
+    HUGUI.Parent = game.CoreGui -- Place GUI in CoreGui for persistence
+    HUGUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- Controls layering behavior of GUI elements
+    game.CoreGui.HUGUI.Enabled = true -- Make the GUI visible
+
+    -- Setup top bar of the GUI
+    HTopBar.Name = "HTopBar" -- Set name for the top bar
+    HTopBar.Parent = HUGUI -- Place top bar in main GUI
+    HTopBar.AnchorPoint = Vector2.new(0.5, 0.5) -- Set pivot point to center (0.5, 0.5)
+    HTopBar.Position = UDim2.new(0.5, 0, 0.5, 0) -- Position in center of screen
+    HTopBar.Size = UDim2.new(0, 250, 0, 50) -- Set size (250 pixels wide, 50 pixels tall)
+    HTopBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Dark gray background color
+    HTopBar.ZIndex = 2 -- Layer order (higher numbers appear on top)
+
+    -- Setup close button
+    CloseButton.Name = "CloseButton" -- Set name for close button
+    CloseButton.Parent = HTopBar -- Place in top bar
+    CloseButton.AnchorPoint = Vector2.new(0.5, 0.5) -- Center pivot point
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Red background color
+    CloseButton.Position = UDim2.new(0.845, 0, 0.5, 0) -- Position on right side of top bar
+    CloseButton.Size = UDim2.new(0, 80, 0, 50) -- Size (80x50 pixels)
+    CloseButton.Font = Enum.Font.SourceSans -- Set font style
+    CloseButton.TextSize = 35 -- Set text size to 35 pixels
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- White text color
+    CloseButton.Text = "X" -- Display X as close symbol
+
+    -- Close button functionality
+    CloseButton.MouseButton1Click:Connect(function()
+        if teleportConnection then
+            teleportConnection:Disconnect() -- Clean up teleport connection
+        end
+        HUGUI:Destroy() -- Remove GUI from game
+    end)
+
+    -- Setup minimize tab
+    MinTab.Name = "MinTab" -- Set name for minimize tab
+    MinTab.Parent = HTopBar -- Place in top bar
+    MinTab.AnchorPoint = Vector2.new(0.5, 0.5) -- Center pivot point
+    MinTab.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Blue background color
+    MinTab.Position = UDim2.new(0.54, 0, 0.5, 0) -- Position left of close button
+    MinTab.Size = UDim2.new(0, 80, 0, 50) -- Size (80x50 pixels)
+    MinTab.Font = Enum.Font.SourceSans -- Set font style
+    MinTab.TextSize = 50 -- Set text size to 50 pixels
+    MinTab.TextColor3 = Color3.fromRGB(255, 255, 255) -- White text color
+    MinTab.Text = "-" -- Display minus symbol for minimize
+
+    -- Minimize tab functionality
+    MinTab.MouseButton1Click:Connect(function()
+        if MinTab.Text == "-" then
+            MinTab.Text = "+" -- Change to plus symbol when minimized
+            HFrame.Visible = false -- Hide main frame
+        else
+            if MinTab.Text == "+" then
+                MinTab.Text = "-" -- Change back to minus symbol
+                HFrame.Visible = true -- Show main frame
+            end
+        end
+    end)
+
+    -- Setup main frame
+    HFrame.Name = "HFrame" -- Set name for main frame
+    HFrame.Parent = HTopBar -- Place in top bar
+    HFrame.AnchorPoint = Vector2.new(0.5, 0.5) -- Center pivot point
+    HFrame.Position = UDim2.new(0.5, 0, 2.5, 0) -- Position below top bar
+    HFrame.Size = UDim2.new(0, 250, 0, 150) -- Size (250x150 pixels)
+    HFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Dark gray background color
+
+    -- Setup hug button
+    HugButton.Name = "HugButton" -- Set name for hug button
+    HugButton.Parent = HFrame -- Place in main frame
+    HugButton.AnchorPoint = Vector2.new(0.5, 0.5) -- Center pivot point
+    HugButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80) -- Medium gray background color
+    HugButton.Position = UDim2.new(0.5, 0, 0.7, 0) -- Position in lower part of frame
+    HugButton.Size = UDim2.new(0, 180, 0, 80) -- Size (180x80 pixels)
+    HugButton.Font = Enum.Font.SourceSans -- Set font style
+    HugButton.TextSize = 50 -- Set text size to 50 pixels
+    HugButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- White text color
+    HugButton.Text = "HUG\nOff" -- Initial button text (Off state)
+
+    -- Variable to store currently targeted player
+    local currentTarget = nil
+
+    -- Function to find the nearest player
+    local function findNearestPlayer()
+        local myPlayer = game.Players.LocalPlayer -- Get reference to local player
+        local myCharacter = myPlayer.Character
+        if not myCharacter then return nil end
+        
+        local nearestPlayer = nil
+        local shortestDistance = math.huge -- Start with infinity as shortest distance
+        
+        -- Loop through all players
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= myPlayer then -- Skip local player
+                local character = player.Character
+                if character then
+                    -- Calculate distance between players
+                    local distance = (myCharacter.HumanoidRootPart.Position - character.HumanoidRootPart.Position).Magnitude
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        nearestPlayer = player
+                    end
+                end
+            end
+        end
+        
+        return nearestPlayer
+    end
+-- Function to smoothly move to target position
+    local function smoothTeleport(targetCFrame)
+        local character = game.Players.LocalPlayer.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        
+        if not humanoid or not rootPart then return end
+        
+        -- Create tween for smooth movement
+        local tween = tweenService:Create(rootPart, 
+            TweenInfo.new(LERP_SPEED, Enum.EasingStyle.Linear), -- Linear movement for consistent speed
+            {CFrame = targetCFrame} -- Target position and orientation
+        )
+        
+        -- Disable character animation states
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
+        
+        tween:Play() -- Start the smooth movement
+    end
+       -- Function to position player in front of target
+    local function positionInFrontOf(targetPlayer)
+        local myCharacter = game.Players.LocalPlayer.Character
+        local targetCharacter = targetPlayer.Character
+        
+        if myCharacter and targetCharacter then
+            local targetRoot = targetCharacter.HumanoidRootPart
+            local targetCFrame = targetRoot.CFrame
+            
+            -- Calculate position in front of target
+            -- Using the target's look vector to determine front position
+            local frontOffset = targetCFrame.LookVector * + TELEPORT_DISTANCE  -- Negative to be in front
+            local targetPos = targetCFrame.Position
+            local myPos = targetPos - frontOffset
+            
+            -- Create a CFrame that makes our character face the target
+            -- We use CFrame.lookAt to ensure we're always facing the target
+            local newCFrame = CFrame.new(myPos, targetPos)
+            
+            -- Smooth movement to new position
+            smoothTeleport(newCFrame)
+            
+            -- Lock character movement while hugging
+            local myHumanoid = myCharacter:FindFirstChild("Humanoid")
+            if myHumanoid then
+                myHumanoid.WalkSpeed = 16
+                myHumanoid.JumpPower = 0
+            end
+        end
+    end
+
+    -- Connect player removal handler
+    game.Players.PlayerRemoving:Connect(function(player)
+        if player == currentTarget then
+            handleTargetRemoval()
+        end
+    end)
+
+    -- Hug button functionality
+    HugButton.MouseButton1Click:Connect(function()
+        if HugButton.Text == "HUG\nOff" then
+            HugButton.Text = "HUG\nOn" -- Change text to On state
+            
+            -- Find and store current target
+            currentTarget = findNearestPlayer()
+            if not currentTarget then
+                HugButton.Text = "HUG\nOff"
+                return
+            end
+            
+            -- Setup hug animations
+            Anim_1 = Instance.new("Animation") -- Create first animation instance
+            Anim_1.AnimationId = "rbxassetid://283545583" -- Set animation asset ID
+            Play_1 = game.Players.LocalPlayer.Character.Humanoid:LoadAnimation(Anim_1)
+            
+            Anim_2 = Instance.new("Animation") -- Create second animation instance
+            Anim_2.AnimationId = "rbxassetid://225975820" -- Set animation asset ID
+            Play_2 = game.Players.LocalPlayer.Character.Humanoid:LoadAnimation(Anim_2)
+            
+            -- Play both animations
+            Play_1:Play()
+            Play_2:Play()
+            
+            -- Start following loop with increased update frequency
+            teleportConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if currentTarget and currentTarget.Parent then  -- Check if target still exists
+                    positionInFrontOf(currentTarget)
+                else
+                    handleTargetRemoval()
+                end
+            end)
+        else
+            if HugButton.Text == "HUG\nOn" then
+                currentTarget = nil  -- Clear current target
+                HugButton.Text = "HUG\nOff" -- Change text back to Off state
+                
+                -- Stop animations
+                Play_1:Stop()
+                Play_2:Stop()
+                
+                -- Stop following loop
+                if teleportConnection then
+                    teleportConnection:Disconnect()
+                    teleportConnection = nil
+                end
+                
+                -- Re-enable character animations and movement
+                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
+                    humanoid.WalkSpeed = 16  -- Reset to default walk speed
+                    humanoid.JumpPower = 50  -- Reset to default jump power
+                end
+            end
+        end
+    end)
+
+    -- Setup information label
+    HugLabel.Name = "HugLabel" -- Set name for label
+    HugLabel.Parent = HFrame -- Place in main frame
+    HugLabel.AnchorPoint = Vector2.new(0.5, 0.5) -- Center pivot point
+    HugLabel.BackgroundTransparency = 1 -- Make background invisible
+    HugLabel.Position = UDim2.new(0.5, 0, 0.15, 0) -- Position at top of frame
+    HugLabel.Size = UDim2.new(0, 180, 0, 80) -- Size (180x80 pixels)
+    HugLabel.Font = Enum.Font.SourceSans -- Set font style
+    HugLabel.TextSize = 28 -- Set text size to 28 pixels
+    HugLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- White text color
+    HugLabel.Text = "Toggle to smoothly hug the nearest player!" -- Instruction text
+    HugLabel.TextWrapped = true -- Allow text to wrap to multiple lines
+
+    -- GUI dragging functionality
+    local gui = HTopBar -- Reference to draggable top bar
+    local dragging -- Tracks if currently dragging
+    local dragInput -- Stores current input while dragging
+    local dragStart -- Starting position of drag
+    local startPos -- Starting position of GUI
+    
+    -- Update GUI position while dragging
+    local function update(input)
+        local delta = input.Position - dragStart -- Calculate movement delta
+        gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    -- Handle start of dragging
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+    
+            -- Handle end of dragging
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    -- Track input changes while dragging
+    gui.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    -- Update GUI position on input change
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+
+else
+    warn("Need R6") -- Warning if player is not using R6 rig type
+end
