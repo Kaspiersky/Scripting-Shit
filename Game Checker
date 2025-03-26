@@ -1,5 +1,5 @@
 -- Replace with your target game's PlaceId
-local correctGameId = 4483381587
+local correctGameId = 122008870888915
 
 local StarterGui = game:GetService("StarterGui")
 
@@ -22,7 +22,7 @@ else
     -- Notification for being in the wrong game
     StarterGui:SetCore("SendNotification", {
         Title = "Game Check",
-        Text = "Join a literal baseplate for the script to work properly.",
+        Text = "Join "boibiobioboiio" for the script to work properly.",
         Duration = 5
     })
 end
